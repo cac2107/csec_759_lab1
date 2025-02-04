@@ -86,17 +86,17 @@ def plot(coords):
     text = []
     for i in range(len(points)): text.append(f"Point {i+1}")
 
-    fig = go.Figure(go.Scattermapbox(
+    fig = go.Figure(go.Scattermap(
         lat=lats,
         lon=lons,
         mode='markers+text',
-        marker=go.scattermapbox.Marker(size=8, color='blue'),
+        marker=go.scattermap.Marker(size=8, color='blue'),
         text=text,
         textposition="bottom right"
     ))
 
     for line in lines:
-        fig.add_trace(go.Scattermapbox(
+        fig.add_trace(go.Scattermap(
             lat=[line[0][0], line[1][0]],
             lon=[line[0][1], line[1][1]],
             mode='lines',
