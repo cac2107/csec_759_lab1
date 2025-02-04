@@ -69,8 +69,8 @@ def plot(coords):
     points = []
     lines = []
     for c in coords:
-        p1 = [c[1], c[0]]
-        p2 = [c[3], c[2]]
+        p1 = [c[0], c[1]]
+        p2 = [c[2], c[3]]
         points.append(p1)
         points.append(p2)
         lines.append([p1, p2])
@@ -119,10 +119,10 @@ def main():
     coords = read_all_files()
     perturbed_coords = []
     for coord in coords:
-        p_coord = perturb(coord[0], coord[1])
+        p_coord = perturb(coord[1], coord[0])
         perturbed_coords.append(p_coord)
 
-    plot(perturbed_coords[:5])
+    plot(random.sample(perturbed_coords, k=5))
 
 if __name__ == "__main__":
     main()
