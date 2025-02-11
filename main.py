@@ -9,7 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 
-EPSILON = 10000
+EPSILON = 0.001
 
 def read_all_files():
     all_coords = []
@@ -23,16 +23,47 @@ def read_all_files():
             all_coords.append(coords)
     return all_coords
 
+def read_ind_file(name):
+    all_coords = []
+    with open(f"./csec_data/{name}") as f:
+        lines = f.readlines()
+    for line in lines:
+        coords = line.split(',')
+        coords[0] = float(coords[0])
+        coords[1] = float(coords[1])
+        all_coords.append(coords)
+    return all_coords
+
+def write_file(name, data):
+    towrite = ""
+    for d in data:
+        towrite += ",".join(map(str, d)) + "\n"
+    with open(f"./perturbed_data/{name}", "w") as f:
+        f.write(towrite)
+
 def convert_to_polar(long, lat):
     r = math.sqrt(long**2 + lat**2)
     theta = math.atan2(lat,long)
     return [r, theta]
 
 def convert_to_cart(r, theta):
-    long = r * math.cos(theta)
-    lat = r * math.sin(theta)
+    x = r * math.cos(theta)
+    y = r * math.sin(theta)
     
-    return [long, lat]
+    return [x, y]
+
+def convert_to_cart_from_deg(long, lat):
+    radius = 6371000
+    x = radius * np.radians(long)
+    y = radius * np.radians(lat)
+    return x, y
+
+def convert_to_deg_from_cart(x, y):
+    radius = 6371000
+    long = np.degrees(x / radius)
+    lat = np.degrees(y / radius)
+
+    return long,lat
 
 def gen_p_r():
     p = random.uniform(0, 1)
@@ -44,16 +75,18 @@ def gen_p_r():
     return r
 
 def perturb(long, lat):
-    r, theta = convert_to_polar(long, lat)
+    x, y = convert_to_cart_from_deg(long, lat)
+    r, theta = convert_to_polar(x, y)
     p_theta = random.uniform(0, 2*np.pi)
     p_r = gen_p_r()
 
     new_theta = (theta + p_theta) # % (2*np.pi)
     new_r = r + p_r
 
-    carts = convert_to_cart(new_r, new_theta)
+    carts = convert_to_cart(p_r, p_theta)
+    long2,lat2 = convert_to_deg_from_cart(carts[0], carts[1])
 
-    return [long, lat, carts[0], carts[1]]
+    return [long, lat, long2 + long, lat2 + lat]
 
 def get_token():
     with open("secret.txt", "r") as f: txt = f.read()
@@ -107,7 +140,7 @@ def plot(coords):
         mapbox=dict(
             accesstoken=access_token,
             center=go.layout.mapbox.Center(lat=center_lat, lon=center_lon),
-            zoom=2,
+            zoom=30,
             style="open-street-map"
         ),
         title="Map of perturbed points"
@@ -116,13 +149,27 @@ def plot(coords):
     fig.show()
 
 def main():
-    coords = read_all_files()
-    perturbed_coords = []
-    for coord in coords:
-        p_coord = perturb(coord[0], coord[1])
-        perturbed_coords.append(p_coord)
+    #coords = read_all_files()
 
-    plot(random.sample(perturbed_coords, k=5))
+    perturbed_coords_all = []
+    for file in os.listdir("./csec_data"):
+        ind_coords = read_ind_file(file)
+        p_ind_coords = []
+        for coord in ind_coords:
+            p_coords = perturb(coord[0], coord[1])
+            p_ind_coords.append(p_coords)
+
+        write_file(f"perturbed_{file}", p_ind_coords)
+        perturbed_coords_all += p_ind_coords
+
+    # for coord in coords:
+    #     p_coord = perturb(coord[0], coord[1])
+    #     perturbed_coords.append(p_coord)
+
+    # for p in perturbed_coords[:30]:
+    #     print(p)
+
+    plot(random.sample(perturbed_coords_all, k=5))
 
 if __name__ == "__main__":
     main()
