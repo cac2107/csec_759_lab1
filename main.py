@@ -9,9 +9,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 
-EPSILON = 0.001
+EPSILON = 0.005
 
 def read_all_files():
+    # this function reads every file and returns
+    # the result in a 2d list format
     all_coords = []
     for dir in os.listdir("./csec_data/"):
         with open(f"./csec_data/{dir}") as f:
@@ -24,6 +26,8 @@ def read_all_files():
     return all_coords
 
 def read_ind_file(name):
+    # this function reads individual files and returns
+    # the result in a 2d list format
     all_coords = []
     with open(f"./csec_data/{name}") as f:
         lines = f.readlines()
@@ -35,9 +39,10 @@ def read_ind_file(name):
     return all_coords
 
 def write_file(name, data):
-    towrite = ""
+    # This function writes the new data to a csv
+    towrite = "longitude,latitude,perturbed_longitude,perturbed_latitude"
     for d in data:
-        towrite += ",".join(map(str, d)) + "\n"
+        towrite += "\n" + ",".join(map(str, d))
     with open(f"./perturbed_data/{name}", "w") as f:
         f.write(towrite)
 
@@ -66,6 +71,7 @@ def convert_to_deg_from_cart(x, y):
     return long,lat
 
 def gen_p_r():
+    # Generates r based on the paper provided
     p = random.uniform(0, 1)
     x = (p - 1) / np.exp(1)
 
@@ -75,17 +81,22 @@ def gen_p_r():
     return r
 
 def perturb(long, lat):
-    x, y = convert_to_cart_from_deg(long, lat)
-    r, theta = convert_to_polar(x, y)
+    # Generates random theta
     p_theta = random.uniform(0, 2*np.pi)
+    # Generates r
     p_r = gen_p_r()
 
-    new_theta = (theta + p_theta) # % (2*np.pi)
-    new_r = r + p_r
-
+    # Convert r and theta to cartesian and 
+    # then to degrees
     carts = convert_to_cart(p_r, p_theta)
     long2,lat2 = convert_to_deg_from_cart(carts[0], carts[1])
 
+    # Add the generated r and theta to the original
+    # coordinates and make sure they are within bounds
+    p_long = long2 + long
+    p_lat = lat2 + lat
+    if (p_long < -90 or p_long > 90 or p_lat < -180 or p_lat > 180):
+        return None
     return [long, lat, long2 + long, lat2 + lat]
 
 def get_token():
@@ -93,6 +104,9 @@ def get_token():
     return txt
 
 def plot(coords):
+    # Plotting using mapbox and plotly
+    # In order for this to work, secret.txt must exist
+    # with an API key in it.
     if len(coords) > 15:
         print("Too many coords to plot")
         return
@@ -149,25 +163,17 @@ def plot(coords):
     fig.show()
 
 def main():
-    #coords = read_all_files()
-
     perturbed_coords_all = []
     for file in os.listdir("./csec_data"):
         ind_coords = read_ind_file(file)
         p_ind_coords = []
         for coord in ind_coords:
             p_coords = perturb(coord[0], coord[1])
+            if p_coords == None: continue
             p_ind_coords.append(p_coords)
 
         write_file(f"perturbed_{file}", p_ind_coords)
         perturbed_coords_all += p_ind_coords
-
-    # for coord in coords:
-    #     p_coord = perturb(coord[0], coord[1])
-    #     perturbed_coords.append(p_coord)
-
-    # for p in perturbed_coords[:30]:
-    #     print(p)
 
     plot(random.sample(perturbed_coords_all, k=5))
 
