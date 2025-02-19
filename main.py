@@ -9,7 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 
-EPSILON = 0.005
+EPSILON = 0.008
 
 def read_all_files():
     # this function reads every file and returns
@@ -100,8 +100,15 @@ def perturb(long, lat):
     return [long, lat, long2 + long, lat2 + lat]
 
 def get_token():
-    with open("secret.txt", "r") as f: txt = f.read()
-    return txt
+    try:
+        with open("secret.txt", "r") as f: txt = f.read()
+        return txt
+    except FileNotFoundError:
+        print("secret.txt does not exist. Please create file and save API key.")
+        return None
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
 
 def plot(coords):
     # Plotting using mapbox and plotly
@@ -112,6 +119,7 @@ def plot(coords):
         return
     
     access_token = get_token()
+    if access_token == None: return
 
     points = []
     lines = []
